@@ -9,19 +9,20 @@ namespace mandelbrot {
 	double maxR;
 	double minI;
 	double maxI;
-	std::tuple<int,int,std::tuple<int,int,int>> generateSet(int minX, int maxX, int minY, int maxY);
+	bool generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels);
 	auto findMandelbrot(auto cr, auto ci, auto max_iterations);
 	double mapToReal(auto x, auto imageWidth, auto minR, auto maxR);
 	double mapToImaginary(auto y, auto imageHeight, auto minI, auto maxI);
 	std::tuple<int,int,int> findColor(auto n, auto maxN);
 
-	std::tuple<int,int,std::tuple<int,int,int>> generateSet(int minX, int maxX, int minY, int maxY){
+	bool generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels){
+		bool done = false;
 		// Iterate over every pixel
 		for (auto  y =minY; y < maxY; y++) // Rows
 		{
 			for (auto x = minX; x < maxX; x++) // Columns
 			{
-				// Find the real and imaginary componets of c 
+				// Find the real and imaginary componets of c
 				//     via linear interpolation
 				auto cr = mapToReal(x, imageWidth, minR, maxR);
 				auto ci = mapToImaginary(y, imageHeight, minI, maxI);
@@ -30,12 +31,15 @@ namespace mandelbrot {
 				//     using above c.
 				auto n = findMandelbrot(cr, ci, maxN);
 				std::tuple<int,int,int> color = findColor(n,maxN);
-				//pixels[x][y] = color;
-				std::tuple<int,int, std::tuple<int,int,int>> pixel = make_tuple(x,y,color);
-				if(y == imageHeight - 1 && x == imageWidth - 1) { std::cout << "Work done!" << std::endl; }
-				return pixel;
+				pixels[x][y] = color;
+				if(x == imageWidth - 1 && y == imageHeight - 1) done = true;
+				std::cout << "x, y" << x << ", " << y << std::endl;
 			}
 		}
+
+		std::cout << "complete set " << done << std::endl;
+
+		return done;
 	}
 
 	auto findMandelbrot(auto cr, auto ci, auto max_iterations)

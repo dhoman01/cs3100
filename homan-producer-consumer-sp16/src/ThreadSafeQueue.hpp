@@ -1,8 +1,12 @@
+#ifndef THREAD_SAFE_QUEUE
+#define THREAD_SAFE_QUEUE
+
 #include <mutex>
 #include <atomic>
 #include <queue>
 #include <condition_variable>
 #include <exception>
+#include <iostream>
 
 template<class T>
 class ThreadSafeQueue{
@@ -29,13 +33,12 @@ public:
 			if(!cont.load()) throw std::runtime_error("Wait aborted");
 			{
 				std::unique_lock<std::mutex> lck (mutex_empty);
-				bool empty = data.empty();
 				std::cout << "Calling wait on thread" << std::endl;
-				notEmpty.wait(lck,[empty]{ return !empty; });
+				notEmpty.wait(lck,[&]{ return !data.empty(); });
 			};
-			
+
 		}
-		
+
 		if(!data.empty())
 		{
 			std::lock_guard<std::mutex> l(mutex_data);
@@ -52,3 +55,5 @@ public:
 		notEmpty.notify_all();
 	};
 };
+
+#endif
