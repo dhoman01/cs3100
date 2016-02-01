@@ -38,13 +38,13 @@ void WorkQueue::start(int n)
 				}
 				catch(const std::exception &exc)
 				{
-					std::cerr << exc.what() << std::endl;
+					std::cerr << "Inner exception: " << exc.what() << std::endl;
 				}
 			}
 		}
 		catch(const std::exception &exc)
 		{
-			std::cerr << exc.what() <<std::endl;
+			std::cerr << "Outer exception: " << exc.what() <<std::endl;
 		}
 	};
 	for(auto i = 0; i < n; ++i)
@@ -59,9 +59,8 @@ void WorkQueue::stop()
 	cont = false;
 	tasklist.abort();
 	std::for_each(threadpool.begin(),threadpool.end(),[](auto& t){
-		std::cout << "Stopping thread" << std::endl;
+		std::cout << "Detaching thread" << std::endl;
 		t.detach();
-		std::cout << "Thread detached" << std::endl;
 	});
 
 	threadpool.clear();

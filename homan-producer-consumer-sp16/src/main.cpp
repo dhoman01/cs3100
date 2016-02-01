@@ -12,10 +12,11 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <chrono>
 #include "mandelbrot.hpp"
 #include "stats.hpp"
 #include "timer.hpp"
-#include "WorkQueue.cpp"
+#include "WorkQueue.hpp"
 
 using namespace std;
 
@@ -24,18 +25,22 @@ mutex mutex_wait;
 mutex mutex_pixel;
 condition_variable finished;
 atomic<bool> work_done(false);
+atomic<int> amount(0);
 
 // Write the image to a PPM
-void writeToPpm(auto imageWidth, auto imageHeight){
+void writeToPpm(string name, auto imageWidth, auto imageHeight){
 	// Open the output file and write the PPM header...
-	ofstream fout("output_image.ppm");
+	ofstream fout(name.append("_output_image.ppm"));
 	fout << "P3" << endl;                                                        // "Magic Number" - PPM file
 	fout << imageWidth << " " << imageHeight << endl;    // Dimensions
 	fout << "255" << endl;                                                      // Maximum value of a pixel R,G,B value...
-
+	
+	//this_thread::sleep_for(chrono::seconds(5));
+	
 	// Write to pixels
 	for( auto y = 0; y < imageHeight; y++){
 		for(auto x = 0; x < imageWidth; x++){
+			//cout << "Pixel: " << x << " " << y << endl;
 			lock_guard<mutex> l(mutex_pixel);
 			auto color = pixels[x][y];                 // Color stored as tuple<Red, Green, Blue>
 			fout << " " << get<0>(color) << " " << get<1>(color) << " " << get<2>(color) << " ";
@@ -47,26 +52,12 @@ void writeToPpm(auto imageWidth, auto imageHeight){
 	return;
 }
 
-void placePixel(auto pixel){
-	{
-		lock_guard<mutex> l (mutex_pixel);
-		pixels[get<0>(pixel)][get<1>(pixel)] = get<2>(pixel);
-	};
-	if(get<0>(pixel) >= mandelbrot::imageWidth - 1 && get<1>(pixel) >= mandelbrot::imageHeight -1 )
-	{
-		cout << "Setting work_done to true" << endl;
-		work_done = true;
-		cout << "Notifying all" << endl;
-		finished.notify_all();
-	}
-}
-
-void rows()
+void chunks()
 {
 	auto n = 32;
 
-	auto minW = 0;
-	auto maxW = mandelbrot::imageWidth / n;
+	auto minX = 0;
+	auto maxX = mandelbrot::imageWidth / n;
 	auto minY = 0;
 	auto maxY = mandelbrot::imageHeight;
 
@@ -79,23 +70,24 @@ void rows()
 
 	wq.start(4);
 
-	while(maxW <= mandelbrot::imageWidth)
+	while(maxX <= mandelbrot::imageWidth)
 	{
-		wq.post([minW,maxW,minY,maxY](){
-            bool done = false;
-            {
-                lock_guard<mutex> lck(mutex_pixel);
-                done = mandelbrot::generateSet(minW, maxW, 0, maxY, pixels);
+		wq.post([minX,maxX,minY,maxY,n](){
+			{
+				lock_guard<mutex> lck(mutex_pixel);
+				mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
+				amount++;
+				cout << "amount complete: " << amount << "/" << n << endl;;
 			};
-			if(done){
-                cout << "Work is done!" << endl;
-                work_done = true;
-                cout << "Notifying all" << endl;
-                finished.notify_all();
+			if(amount == n){
+				cout << "Work is done!" << endl;
+				work_done = true;
+				cout << "Notifying main" << endl;
+				finished.notify_all();
 			}
 		});
-		minW = maxW;
-		maxW += mandelbrot::imageWidth / n;
+		minX = maxX;
+		maxX += mandelbrot::imageWidth / n;
 	}
 
 	cout << "All the work has been added" << endl;
@@ -103,16 +95,192 @@ void rows()
 	{
 		{
 			unique_lock<mutex> l(mutex_wait);
-			cout << "calling wait on main" << endl;
 			finished.wait(l, [] {
-                cout << "work_done " << work_done.load() << endl;
-                return work_done.load();
+				return work_done.load();
 			});
 		};
-		cout << "main notified" << endl;
+	}
+}
+
+void perPixel()
+{
+	{
+		lock_guard<mutex> l(mutex_pixel);
+		pixels = vector<vector<tuple<int,int,int>>> (mandelbrot::imageWidth, vector<tuple<int,int,int>> (mandelbrot::imageHeight, make_tuple(0,0,0)));
+	};
+
+	WorkQueue wq;
+
+	wq.start(4);
+	
+	for(int x = 0; x < mandelbrot::imageWidth; x++)
+	{
+		for(int y = 0; y < mandelbrot::imageHeight; y++)
+		{
+			wq.post([x,y](){
+				{
+					lock_guard<mutex> lck(mutex_pixel);
+					mandelbrot::generateSet(x, x + 1, y, y + 1, pixels);
+					amount++;
+					cout << "amount complete: " << amount << "/" << mandelbrot::imageWidth * mandelbrot::imageHeight << endl;;
+				};
+				if(amount == mandelbrot::imageWidth * mandelbrot::imageHeight){
+					cout << "Work is done!" << endl;
+					work_done = true;
+					cout << "Notifying main" << endl;
+					finished.notify_all();
+				}
+			});
+		}
 	}
 
-	wq.stop();
+	cout << "All the work has been added" << endl;
+	while(!(work_done.load()))
+	{
+		{
+			unique_lock<mutex> l(mutex_wait);
+			finished.wait(l, [] {
+				return work_done.load();
+			});
+		};
+	}
+}
+
+void multPixel()
+{
+	auto n = 32;
+	
+	{
+		lock_guard<mutex> l(mutex_pixel);
+		pixels = vector<vector<tuple<int,int,int>>> (mandelbrot::imageWidth, vector<tuple<int,int,int>> (mandelbrot::imageHeight, make_tuple(0,0,0)));
+	};
+
+	WorkQueue wq;
+
+	wq.start(4);
+	
+	for(int y = 0; y < mandelbrot::imageHeight; y++)
+	{
+		auto minX = 0;
+		auto maxX = mandelbrot::imageWidth / n;
+		while(maxX <= mandelbrot::imageWidth)
+		{
+			wq.post([minX,maxX,y,n](){
+				{
+					lock_guard<mutex> lck(mutex_pixel);
+					mandelbrot::generateSet(minX, maxX, y, y + 1, pixels);
+					amount++;
+					cout << "amount complete: " << amount << "/" << n * mandelbrot::imageHeight << endl;;
+				};
+				if(amount == n * mandelbrot::imageHeight){
+					cout << "Work is done!" << endl;
+					work_done = true;
+					cout << "Notifying main" << endl;
+					finished.notify_all();
+				}
+			});
+			
+			minX = maxX;
+			maxX += mandelbrot::imageWidth / n;
+		}
+	}
+
+	cout << "All the work has been added" << endl;
+	while(!(work_done.load()))
+	{
+		{
+			unique_lock<mutex> l(mutex_wait);
+			finished.wait(l, [] {
+				return work_done.load();
+			});
+		};
+	}
+}
+
+void rows()
+{
+	{
+		lock_guard<mutex> l(mutex_pixel);
+		pixels = vector<vector<tuple<int,int,int>>> (mandelbrot::imageWidth, vector<tuple<int,int,int>> (mandelbrot::imageHeight, make_tuple(0,0,0)));
+	};
+
+	WorkQueue wq;
+
+	wq.start(4);
+	auto maxX = mandelbrot::imageWidth;
+	for(int y = 0; y < mandelbrot::imageHeight; y++)
+	{
+		wq.post([maxX,y](){
+			{
+				lock_guard<mutex> lck(mutex_pixel);
+				mandelbrot::generateSet(0,maxX, y, y + 1, pixels);
+				amount++;
+				cout << "amount complete: " << amount << "/" << mandelbrot::imageHeight << endl;;
+			};
+			if(amount == mandelbrot::imageHeight){
+				cout << "Work is done! " << amount << endl;
+				work_done = true;
+				cout << "Notifying main" << endl;
+				finished.notify_all();
+			}
+		});
+	}
+
+	cout << "All the work has been added" << endl;
+	while(!(work_done.load()))
+	{
+		{
+			unique_lock<mutex> l(mutex_wait);
+			finished.wait(l, [] {
+				return work_done.load();
+			});
+		};
+	}
+}
+
+void even()
+{
+	auto n = 4;
+	auto minX = 0, maxX = mandelbrot::imageWidth / n, minY = 0, maxY = mandelbrot::imageHeight;
+	
+	{
+		lock_guard<mutex> l(mutex_pixel);
+		pixels = vector<vector<tuple<int,int,int>>> (mandelbrot::imageWidth, vector<tuple<int,int,int>> (mandelbrot::imageHeight, make_tuple(0,0,0)));
+	};
+
+	WorkQueue wq;
+
+	wq.start(n);
+	while(maxX <= mandelbrot::imageWidth)
+	{
+		wq.post([minX,maxX,minY,maxY,n](){
+			{
+				lock_guard<mutex> lck(mutex_pixel);
+				mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
+				amount++;
+				cout << "amount complete: " << amount << "/" << n << endl;;
+			};
+			if(amount == n){
+				cout << "Work is done!" << endl;
+				work_done = true;
+				cout << "Notifying main" << endl;
+				finished.notify_all();
+			}
+		});
+		minX = maxX;
+		maxX += mandelbrot::imageWidth / n;
+	}
+
+	cout << "All the work has been added" << endl;
+	while(!(work_done.load()))
+	{
+		{
+			unique_lock<mutex> l(mutex_wait);
+			finished.wait(l, [] {
+				return work_done.load();
+			});
+		};
+	}
 }
 
 int main(){
@@ -122,13 +290,48 @@ int main(){
 
 	// cout << "Please enter the number of trials to find the avg and sd\n";
 	// cin >> trials;
-
+	cout << "Chunks" << endl;
+	chunks();
+		// Write generated image to PPM
+	cout << "Finished generating image, writing to file...\n";
+	writeToPpm("chunks",mandelbrot::imageWidth, mandelbrot::imageHeight);
+	cout << "Finished writing to file.\n";
+	amount = 0;
+	
+	work_done = false;
+	cout << "Per pixel" << endl;
+	perPixel();
+		// Write generated image to PPM
+	cout << "Finished generating image, writing to file...\n";
+	writeToPpm("per_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
+	cout << "Finished writing to file.\n";
+	amount = 0;
+	work_done = false;
+	cout << "multPixel" << endl;
+	multPixel();
+		// Write generated image to PPM
+	cout << "Finished generating image, writing to file...\n";
+	writeToPpm("mult_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
+	cout << "Finished writing to file.\n";	
+	amount = 0;
+	work_done = false;
+	cout << "rows" << endl;
 	rows();
-
+	
 	// Write generated image to PPM
 	cout << "Finished generating image, writing to file...\n";
-	writeToPpm(mandelbrot::imageWidth, mandelbrot::imageHeight);
+	writeToPpm("rows",mandelbrot::imageWidth, mandelbrot::imageHeight);
 	cout << "Finished writing to file.\n";
+	
+	amount = 0;
+	work_done = true;
+	cout << "even" << endl;
+	even();
+		// Write generated image to PPM
+	cout << "Finished generating image, writing to file...\n";
+	writeToPpm("even",mandelbrot::imageWidth, mandelbrot::imageHeight);
+	cout << "Finished writing to file.\n";
+	
 
 	return EXIT_SUCCESS;
 }

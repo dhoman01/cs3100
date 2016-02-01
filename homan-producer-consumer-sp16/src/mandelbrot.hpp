@@ -9,13 +9,13 @@ namespace mandelbrot {
 	double maxR;
 	double minI;
 	double maxI;
-	bool generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels);
+	void generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels);
 	auto findMandelbrot(auto cr, auto ci, auto max_iterations);
 	double mapToReal(auto x, auto imageWidth, auto minR, auto maxR);
 	double mapToImaginary(auto y, auto imageHeight, auto minI, auto maxI);
 	std::tuple<int,int,int> findColor(auto n, auto maxN);
 
-	bool generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels){
+	void generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels){
 		bool done = false;
 		// Iterate over every pixel
 		for (auto  y =minY; y < maxY; y++) // Rows
@@ -32,14 +32,9 @@ namespace mandelbrot {
 				auto n = findMandelbrot(cr, ci, maxN);
 				std::tuple<int,int,int> color = findColor(n,maxN);
 				pixels[x][y] = color;
-				if(x == imageWidth - 1 && y == imageHeight - 1) done = true;
-				std::cout << "x, y" << x << ", " << y << std::endl;
+				// std::cout << "pixel: (" << x << ", " << y << ") " << std::get<0>(color) << " " << std::get<1>(color) << " " << std::get<2>(color) << std::endl;
 			}
 		}
-
-		std::cout << "complete set " << done << std::endl;
-
-		return done;
 	}
 
 	auto findMandelbrot(auto cr, auto ci, auto max_iterations)

@@ -17,14 +17,14 @@ condition_variable
 -
 exception
 -
-
-/home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/WorkQueue.cpp
-WorkQueue.hpp
-/home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/WorkQueue.hpp
-algorithm
+iostream
 -
 
 /home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/WorkQueue.hpp
+algorithm
+-
+iostream
+-
 queue
 -
 thread
@@ -57,14 +57,16 @@ condition_variable
 -
 mutex
 -
+chrono
+-
 mandelbrot.hpp
 /home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/mandelbrot.hpp
 stats.hpp
 /home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/stats.hpp
 timer.hpp
 /home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/timer.hpp
-WorkQueue.cpp
-/home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/WorkQueue.cpp
+WorkQueue.hpp
+/home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/WorkQueue.hpp
 
 /home/pi/Desktop/cs3100/homan-producer-consumer-sp16/src/mandelbrot.hpp
 tuple

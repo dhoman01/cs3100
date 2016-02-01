@@ -33,7 +33,6 @@ public:
 			if(!cont.load()) throw std::runtime_error("Wait aborted");
 			{
 				std::unique_lock<std::mutex> lck (mutex_empty);
-				std::cout << "Calling wait on thread" << std::endl;
 				notEmpty.wait(lck,[&]{ return !data.empty(); });
 			};
 
@@ -51,7 +50,6 @@ public:
 		std::lock_guard<std::mutex> l(mutex_cont);
 		std::cout << "Aborting" << std::endl;
 		cont = false;
-		std::cout << "Notifing all" << std::endl;
 		notEmpty.notify_all();
 	};
 };
