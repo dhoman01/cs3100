@@ -31,7 +31,7 @@ void writeToPpm(std::string name, auto imageWidth, auto imageHeight){
 	fout << "P3" << std::endl;                                                        // "Magic Number" - PPM file
 	fout << imageWidth << " " << imageHeight << std::endl;    // Dimensions
 	fout << "255" << std::endl;                                                      // Maximum value of a pixel R,G,B value...
-	
+
 	// Write to pixels
 	for( auto y = 0; y < imageHeight; y++){
 		for(auto x = 0; x < imageWidth; x++){
@@ -56,10 +56,10 @@ void chunks(auto trials)
 	{
 		std::vector<double> running_times;
 		for(auto j = 0; j < trials; j++)
-		{		
+		{
 			std::atomic<int> amount(0);
 			work_done = false;
-			auto n = 32;
+			const auto n = 32;
 
 			auto minX = 0;
 			auto maxX = mandelbrot::imageWidth / n;
@@ -81,16 +81,16 @@ void chunks(auto trials)
 							std::cout << "amount complete: " << amount << "/" << n << std::endl;;
 						};
 						if(amount == n){
-							//std::cout << "Work is done!" << std::endl;
+							std::cout << "Work is done!" << std::endl;
 							work_done = true;
-							//std::cout << "Notifying main" << std::endl;
+							std::cout << "Notifying main" << std::endl;
 							finished.notify_all();
 						}
 					});
 					minX = maxX;
 					maxX += mandelbrot::imageWidth / n;
 				}
-		
+
 				//std::cout << "All the work has been added" << std::endl;
 				while(!(work_done.load()))
 				{
@@ -109,8 +109,8 @@ void chunks(auto trials)
 		}
 		// Calculate the average and standard deviation of the trials
 		std::pair<double,double> avg_sd = stats::getMeanAndSD(running_times);
-		thread_avg_pairs.push_back(std::make_pair(i,avg_sd.first));		
-	
+		thread_avg_pairs.push_back(std::make_pair(i,avg_sd.first));
+
 		fout << "=======================================\n";
 		fout << "Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI\n";
 		fout << mandelbrot::imageWidth << ", " << mandelbrot::imageHeight << ", " << mandelbrot::maxN;
@@ -131,7 +131,7 @@ void chunks(auto trials)
 		fout << "Efficiency: " << E << std::endl;
 		fout << "=======================================\n\n";
 	});
-	
+
 	fout.close();
 }
 
@@ -220,7 +220,7 @@ void perPixel(auto trials)
 }
 
 void multPixel(int trials)
-{	
+{
 	// File for storing timing data
 	std::ofstream fout;
 	fout.open("mult_pixel_time_results.txt");
@@ -312,7 +312,7 @@ void multPixel(int trials)
 }
 
 void rows(auto trials)
-{	
+{
 	// File for storing timing data
 	std::ofstream fout;
 	fout.open("rows_time_results.txt");

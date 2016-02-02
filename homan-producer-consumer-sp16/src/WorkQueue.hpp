@@ -60,6 +60,7 @@ void WorkQueue::stop()
 	std::cout << "Stopping" << std::endl;
 	tasklist.abort();
 	std::for_each(threadpool.begin(),threadpool.end(),[](auto& t){
+        std::cout << "Joining thread" << std::endl;
 		t.join();
 	});
 
