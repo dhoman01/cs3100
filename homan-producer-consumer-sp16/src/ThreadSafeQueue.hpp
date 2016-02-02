@@ -31,12 +31,15 @@ public:
 		{
 			if(!cont.load())
 			{
+                std::cout << "Thread is aborting..." << std::endl;
 				throw std::runtime_error("Wait aborted");
 			}
 			{
+                std::cout << "Thread waiting for work" << std::endl;
 				std::unique_lock<std::mutex> lck (mutex_wait);
 				empty.wait(lck,[&]{ return !data.empty() || !cont.load(); });
 			};
+			std::cout << "Thread notified" << std::endl;
 		}
 
 		if(!data.empty())
@@ -48,6 +51,7 @@ public:
 		}
 	};
 	void abort(){
+        std::cout << "Aborting" << std::endl;
 		cont = false;
 		empty.notify_all();
 	};

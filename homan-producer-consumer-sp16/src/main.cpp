@@ -77,7 +77,7 @@ void chunks(auto trials)
 
 				while(maxX <= mandelbrot::imageWidth)
 				{
-					wq.post([=,&amount,&work_done,&pixels,&mutex_pixel,&finished](){
+					wq.post([&,minX,maxX,maxY](){
 						{
 							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels, mutex_pixel);
 							amount.fetch_add(1);
@@ -94,7 +94,7 @@ void chunks(auto trials)
 					maxX += mandelbrot::imageWidth / n;
 				}
 
-				//std::cout << "All the work has been added" << std::endl;
+				std::cout << "All the work has been added" << std::endl;
 				while(!(work_done.load()))
 				{
 					{
