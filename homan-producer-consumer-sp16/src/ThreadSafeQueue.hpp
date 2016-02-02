@@ -13,29 +13,33 @@ class ThreadSafeQueue{
 private:
 	std::queue<T> data;
 	std::mutex mutex_data;
-	std::mutex mutex_empty;
-	std::mutex mutex_cont;
-	std::condition_variable notEmpty;
+	std::mutex mutex_wait;
+	std::condition_variable empty;
 	std::atomic<bool> cont;
 public:
-	ThreadSafeQueue():data(),mutex_data(),notEmpty(),mutex_cont(),cont(true){};
-	ThreadSafeQueue(const ThreadSafeQueue& tsq) : data(tsq.data),mutex_data(),notEmpty(),mutex_cont(),cont(true){};
+	ThreadSafeQueue():data(),mutex_data(),empty(),cont(true){};
+	ThreadSafeQueue(const ThreadSafeQueue& tsq) : data(tsq.data),mutex_data(),empty(),cont(true){};
 	void enqueue(T t)
 	{
 		std::lock_guard<std::mutex> l(mutex_data);
 		data.push(t);
-		notEmpty.notify_one();
+		empty.notify_one();
 	};
 	T dequeue()
 	{
 		while(data.empty())
 		{
-			if(!cont.load()) throw std::runtime_error("Wait aborted");
+			if(!cont.load())
 			{
-				std::unique_lock<std::mutex> lck (mutex_empty);
-				notEmpty.wait(lck,[&]{ return !data.empty(); });
+				std::cout << "Thread is aborting..." << std::endl;
+				throw std::runtime_error("Wait aborted");
+			}
+			{
+				std::unique_lock<std::mutex> lck (mutex_wait);
+				std::cout << "Thread waiting for work" << std::endl;
+				empty.wait(lck,[&]{ return !data.empty() || !cont.load(); });
 			};
-
+			std::cout << "Thread notified" << std::endl;
 		}
 
 		if(!data.empty())
@@ -47,10 +51,9 @@ public:
 		}
 	};
 	void abort(){
-		std::lock_guard<std::mutex> l(mutex_cont);
 		std::cout << "Aborting" << std::endl;
 		cont = false;
-		notEmpty.notify_all();
+		empty.notify_all();
 	};
 };
 

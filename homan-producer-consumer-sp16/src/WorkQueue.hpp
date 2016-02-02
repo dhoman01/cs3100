@@ -14,7 +14,6 @@
 class WorkQueue {
 private:
 	ThreadSafeQueue<std::function<void(void)>> tasklist;
-	std::mutex mutex_pool;
 	std::atomic<bool> cont;
 	std::vector<std::thread> threadpool;
 public:
@@ -27,14 +26,16 @@ public:
 
 void WorkQueue::start(int n)
 {
-	auto doTask = [&](){
+	auto doTask =[&](){
 		try
 		{
 			while(cont.load())
 			{
 				try
 				{
-					tasklist.dequeue()();
+					auto t = tasklist.dequeue();
+					if(t) t();
+					if(!t) std::cout << "Empty function" << std::endl;
 				}
 				catch(const std::exception &exc)
 				{
@@ -59,8 +60,8 @@ void WorkQueue::stop()
 	cont = false;
 	tasklist.abort();
 	std::for_each(threadpool.begin(),threadpool.end(),[](auto& t){
-		std::cout << "Detaching thread" << std::endl;
-		t.detach();
+		std::cout << "Joining thread" << std::endl;
+		t.join();
 	});
 
 	threadpool.clear();
@@ -68,6 +69,8 @@ void WorkQueue::stop()
 
 void WorkQueue::post(std::function<void(void)> f)
 {
+    if(!f) {
+    std::cout << "f is empty" << std::endl;}
 	tasklist.enqueue(f);
 }
 
