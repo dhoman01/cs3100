@@ -66,7 +66,10 @@ void chunks(auto trials)
 			auto minY = 0;
 			auto maxY = mandelbrot::imageHeight;
 
-			pixels = std::vector<std::vector<std::tuple<int,int,int>>> (mandelbrot::imageWidth, std::vector<std::tuple<int,int,int>> (mandelbrot::imageHeight, std::make_tuple(0,0,0)));
+            {
+                std::lock_guard<std::mutex> lck(mutex_pixel);
+                pixels = std::vector<std::vector<std::tuple<int,int,int>>> (mandelbrot::imageWidth, std::vector<std::tuple<int,int,int>> (mandelbrot::imageHeight, std::make_tuple(0,0,0)));
+			};
 			auto f = [&](){
 				WorkQueue wq;
 
@@ -74,15 +77,15 @@ void chunks(auto trials)
 
 				while(maxX <= mandelbrot::imageWidth)
 				{
-					wq.post([=,&amount](){
+					wq.post([=,&amount,&work_done,&pixels,&mutex_pixel,&finished](){
 						{
-							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
-							amount++;
-							std::cout << "amount complete: " << amount << "/" << n << std::endl;;
+							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels, mutex_pixel);
+							amount.fetch_add(1);
+							std::cout << "amount complete: " << amount.load() << "/" << n << std::endl;;
 						};
-						if(amount == n){
+						if(amount.load() == n){
 							std::cout << "Work is done!" << std::endl;
-							work_done = true;
+							work_done.store(true);
 							std::cout << "Notifying main" << std::endl;
 							finished.notify_all();
 						}
@@ -161,7 +164,7 @@ void perPixel(auto trials)
 					for (int y = 0; y < mandelbrot::imageHeight; y++)
 					{
 						wq.post([=, &amount]() {
-							mandelbrot::generateSet(x, x + 1, y, y + 1, pixels);
+							mandelbrot::generateSet(x, x + 1, y, y + 1, pixels, mutex_pixel);
 							amount++;
 							std::cout << "amount complete: " << amount << "/" << total << std::endl;
 							if (amount == total)
@@ -250,7 +253,7 @@ void multPixel(int trials)
 					{
 						wq.post([=, &amount]() {
 							{
-								mandelbrot::generateSet(minX, maxX, y, y + 1, pixels);
+								mandelbrot::generateSet(minX, maxX, y, y + 1, pixels, mutex_pixel);
 								amount++;
 								std::cout << "amount complete: " << amount << "/" << n * mandelbrot::imageHeight << std::endl;;
 							};
@@ -335,7 +338,7 @@ void rows(auto trials)
 				{
 					wq.post([=, &amount]() {
 						{
-							mandelbrot::generateSet(0, maxX, y, y + 1, pixels);
+							mandelbrot::generateSet(0, maxX, y, y + 1, pixels, mutex_pixel);
 							amount++;
 							std::cout << "amount complete: " << amount << "/" << mandelbrot::imageHeight << std::endl;;
 						};
@@ -417,7 +420,7 @@ void even(int trials)
 				{
 					wq.post([=, &amount]() {
 						{
-							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
+							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels, mutex_pixel);
 							amount++;
 							std::cout << "amount complete: " << amount << "/" << n << std::endl;;
 						};
