@@ -37,7 +37,7 @@ void writeToPpm(std::string name, auto imageWidth, auto imageHeight){
 		for(auto x = 0; x < imageWidth; x++){
 			std::lock_guard<std::mutex> l(mutex_pixel);
 			auto color = pixels[x][y];                 // Color stored as tuple<Red, Green, Blue>
-			fout << " " << std::get<0>(color) << " " << std::<1>(color) << " " << std::get<2>(color) << " ";
+			fout << " " << std::get<0>(color) << " " << std::get<1>(color) << " " << std::get<2>(color) << " ";
 		}
 		fout << std::endl;
 	}
@@ -46,51 +46,96 @@ void writeToPpm(std::string name, auto imageWidth, auto imageHeight){
 	return;
 }
 
-void chunks()
+void chunks(auto trials)
 {
-	std::atomic<int> amount(0);
-	auto n = 32;
-
-	auto minX = 0;
-	auto maxX = mandelbrot::imageWidth / n;
-	auto minY = 0;
-	auto maxY = mandelbrot::imageHeight;
-
-	pixels = std::vector<std::vector<std::tuple<int,int,int>>> (mandelbrot::imageWidth, std::vector<std::tuple<int,int,int>> (mandelbrot::imageHeight, std::make_tuple(0,0,0)));
-
-	WorkQueue wq;
-
-	wq.start(4);
-
-	while(maxX <= mandelbrot::imageWidth)
+	// File for storing timing data
+	std::ofstream fout;
+	fout.open("chunks_time_results.txt");
+	std::vector<std::pair<int,double>> thread_avg_pairs;
+	for(auto i = 1; i <= 8; i++)
 	{
-		wq.post([=,&amount](){
-			{
-				mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
-				amount++;
-				std::cout << "amount complete: " << amount << "/" << n << std::endl;;
+	
+		std::cout << "i " << i << std::endl;
+		std::vector<double> running_times;
+		for(auto j = 0; j < trials; j++)
+		{		
+			std::cout << "j " << j << std::endl;
+			std::atomic<int> amount(0);
+			work_done = false;
+			auto n = 32;
+
+			auto minX = 0;
+			auto maxX = mandelbrot::imageWidth / n;
+			auto minY = 0;
+			auto maxY = mandelbrot::imageHeight;
+
+			pixels = std::vector<std::vector<std::tuple<int,int,int>>> (mandelbrot::imageWidth, std::vector<std::tuple<int,int,int>> (mandelbrot::imageHeight, std::make_tuple(0,0,0)));
+			auto f = [&](){
+				WorkQueue wq;
+
+				wq.start(i);
+
+				while(maxX <= mandelbrot::imageWidth)
+				{
+					wq.post([=,&amount](){
+						{
+							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
+							amount++;
+							//std::cout << "amount complete: " << amount << "/" << n << std::endl;;
+						};
+						if(amount == n){
+							//std::cout << "Work is done!" << std::endl;
+							work_done = true;
+							//std::cout << "Notifying main" << std::endl;
+							finished.notify_all();
+						}
+					});
+					minX = maxX;
+					maxX += mandelbrot::imageWidth / n;
+				}
+		
+				//std::cout << "All the work has been added" << std::endl;
+				while(!(work_done.load()))
+				{
+					{
+						std::unique_lock<std::mutex> l(mutex_wait);
+						finished.wait(l, [] {
+							return work_done.load();
+						});
+					};
+				}
 			};
-			if(amount == n){
-				std::cout << "Work is done!" << std::endl;
-				work_done = true;
-				std::cout << "Notifying main" << std::endl;
-				finished.notify_all();
-			}
-		});
-		minX = maxX;
-		maxX += mandelbrot::imageWidth / n;
-	}
+			std::chrono::duration<double> time_span = timer::timeFunction<decltype(f)>(f);
 
-	std::cout << "All the work has been added" << std::endl;
-	while(!(work_done.load()))
-	{
-		{
-			std::unique_lock<std::mutex> l(mutex_wait);
-			finished.wait(l, [] {
-				return work_done.load();
-			});
-		};
+			// Store the running time for further calculations
+			running_times.push_back(time_span.count());
+		}
+		// Calculate the average and standard deviation of the trials
+		std::pair<double,double> avg_sd = stats::getMeanAndSD(running_times);
+		thread_avg_pairs.push_back(std::make_pair(i,avg_sd.first));		
+	
+		fout << "=======================================\n";
+		fout << "Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI\n";
+		fout << mandelbrot::imageWidth << ", " << mandelbrot::imageHeight << ", " << mandelbrot::maxN;
+		fout << ", " << mandelbrot::minR << ", " << mandelbrot::maxR << ", " << mandelbrot::minI << ", " << mandelbrot::maxI << std::endl;
+		fout << "# of trials: " << trials << std::endl;
+		fout << "# of threads: " << i << std::endl;
+		fout << "Threaded average running time: " << avg_sd.first << "\n";
+		fout << "Threaded standard deviation: " << avg_sd.second << "\n";
+		fout << "=======================================\n\n";
 	}
+	double org_avg = thread_avg_pairs[0].second;
+	std::for_each(thread_avg_pairs.begin(), thread_avg_pairs.end(), [&fout,org_avg](auto& pair){
+		fout << "=======================================\n";
+		fout << "Comparing 1 thread to " << pair.first << " threads" << std::endl;
+		double S =  stats::getSpeedUp(org_avg, pair.second);
+		fout << "Speed up: " << S << std::endl;
+		double E = stats::getEfficiency(S, pair.first);
+		fout << "Efficiency: " << E << std::endl;
+		fout << "=======================================\n\n";
+	});
+	
+	fout.close();
 }
 
 void perPixel()
@@ -110,7 +155,7 @@ void perPixel()
 			wq.post([=,&amount](){
                 mandelbrot::generateSet(x, x + 1, y, y + 1, pixels);
                 amount++;
-				std:: << "amount complete: " << amount << "/" << total << std::endl;
+				std::cout << "amount complete: " << amount << "/" << total << std::endl;
 				if(amount == total)
 				{
 					std::cout << "Work is done!" << std::endl;
@@ -269,10 +314,10 @@ int main(){
 	std::cout << "Please enter the appropriate values for imageWidth, imageHeight, maxN, minR, maxR, minI, maxI\n";
 	std::cin >> mandelbrot::imageWidth >> mandelbrot::imageHeight >> mandelbrot::maxN >> mandelbrot::minR >> mandelbrot::maxR >> mandelbrot::minI >> mandelbrot::maxI;
 
-	 //cout << "Please enter the number of trials to find the avg and sd\n";
-	 //cin >> trials;
+	 std::cout << "Please enter the number of trials to find the avg and sd\n";
+	 std::cin >> trials;
 	std::cout << "Chunks" << std::endl;
-	chunks();
+	chunks(trials);
     // Write generated image to PPM
 	std::cout << "Finished generating image, writing to file...\n";
 	writeToPpm("chunks",mandelbrot::imageWidth, mandelbrot::imageHeight);

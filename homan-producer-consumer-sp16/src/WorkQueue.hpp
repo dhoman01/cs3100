@@ -39,13 +39,13 @@ void WorkQueue::start(int n)
 				}
 				catch(const std::exception &exc)
 				{
-					std::cerr << "Inner exception: " << exc.what() << std::endl;
+					// do nothing std::cerr << "Inner exception: " << exc.what() << std::endl;
 				}
 			}
 		}
 		catch(const std::exception &exc)
 		{
-			std::cerr << "Outer exception: " << exc.what() <<std::endl;
+			// do nothing std::cerr << "Outer exception: " << exc.what() <<std::endl;
 		}
 	};
 	for(auto i = 0; i < n; ++i)
@@ -56,11 +56,10 @@ void WorkQueue::start(int n)
 
 void WorkQueue::stop()
 {
-	std::cout << "Stopping work" << std::endl;
 	cont = false;
+	std::cout << "Stopping" << std::endl;
 	tasklist.abort();
 	std::for_each(threadpool.begin(),threadpool.end(),[](auto& t){
-		std::cout << "Joining thread" << std::endl;
 		t.join();
 	});
 
@@ -69,8 +68,6 @@ void WorkQueue::stop()
 
 void WorkQueue::post(std::function<void(void)> f)
 {
-    if(!f) {
-    std::cout << "f is empty" << std::endl;}
 	tasklist.enqueue(f);
 }
 
