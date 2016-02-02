@@ -492,7 +492,7 @@ int main(){
 
     work_done = false;
     //std::cout << "Per pixel" << std::endl;
-    //perPixel();
+    //perPixel(trials);
     //// Write generated image to PPM
     //std::cout << "Finished generating image, writing to file...\n";
     //writeToPpm("per_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
@@ -500,7 +500,7 @@ int main(){
 
     //work_done = false;
 	std::cout << "multPixel" << std::endl;
-    multPixel();
+    multPixel(trials);
     // Write generated image to PPM
 	std::cout << "Finished generating image, writing to file...\n";
     writeToPpm("mult_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
@@ -508,7 +508,7 @@ int main(){
 
     work_done = false;
 	std::cout << "rows" << std::endl;
-    rows();
+    rows(trials);
 
     // Write generated image to PPM
 	std::cout << "Finished generating image, writing to file...\n";
@@ -517,7 +517,7 @@ int main(){
 
     work_done = true;
 	std::cout << "even" << std::endl;
-    even();
+    even(trials);
     // Write generated image to PPM
 	std::cout << "Finished generating image, writing to file...\n";
     writeToPpm("even",mandelbrot::imageWidth, mandelbrot::imageHeight);
