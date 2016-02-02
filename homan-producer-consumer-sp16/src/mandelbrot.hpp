@@ -9,13 +9,14 @@ namespace mandelbrot {
 	double maxR;
 	double minI;
 	double maxI;
-	void generateSet(int minX, int maxX, int minY, int maxY, std::vector<std::vector<std::tuple<int,int,int>>>& pixels);
-	auto findMandelbrot(double cr, double ci, int max_iterations);
-	double mapToReal(int x, int imageWidth, double minR, double maxR);
-	double mapToImaginary(int y, int imageHeight, double minI, double maxI);
+	void generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels);
+	auto findMandelbrot(auto cr, auto ci, auto max_iterations);
+	double mapToReal(auto x, auto imageWidth, auto minR, auto maxR);
+	double mapToImaginary(auto y, auto imageHeight, auto minI, auto maxI);
+	std::tuple<int, int, int> findColor(auto n, auto maxN);
 	std::tuple<int,int,int> findColor(int n, int maxN);
 
-	void generateSet(int minX, int maxX, int minY, int maxY, std::vector<std::vector<std::tuple<int, int, int>>>& pixels){
+	void generateSet(auto minX, auto maxX, auto minY, auto maxY, auto& pixels) {
 		bool done = false;
 		// Iterate over every pixel
 		for (auto  y =minY; y < maxY; y++) // Rows
@@ -37,7 +38,7 @@ namespace mandelbrot {
 		}
 	}
 
-	auto findMandelbrot(double cr, double ci, int max_iterations)
+	auto findMandelbrot(auto cr, auto ci, auto max_iterations)
 	{
 		auto i = 0;
 		auto zr = 0.0, zi = 0.0;
@@ -53,20 +54,20 @@ namespace mandelbrot {
 	}
 
 	// Linear interpolation for the real valued component of the set
-	double mapToReal(int x, int imageWidth, double minR, double maxR)
+	double mapToReal(auto x, auto imageWidth, auto minR, auto maxR)
 	{
 		auto range = maxR - minR;
 		return x * (range / imageWidth) + minR;
 	}
 
 	// Linear interpolation for the imaginary component of the set
-	double mapToImaginary(int y, int imageHeight, double minI, double maxI)
+	double mapToImaginary(auto y, auto imageHeight, auto minI, auto maxI)
 	{
 		auto range = maxI - minI;
 		return y * (range / imageHeight) + minI;
 	}
 
-	std::tuple<int,int,int> findColor(int n, int maxN){
+	std::tuple<int, int, int> findColor(auto n, auto maxN) {
 		if(n == maxN){
 			return std::make_tuple(0,0,0);
 		} else {
