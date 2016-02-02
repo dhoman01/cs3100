@@ -78,7 +78,7 @@ void chunks(auto trials)
 						{
 							mandelbrot::generateSet(minX, maxX, 0, maxY, pixels);
 							amount++;
-							//std::cout << "amount complete: " << amount << "/" << n << std::endl;;
+							std::cout << "amount complete: " << amount << "/" << n << std::endl;;
 						};
 						if(amount == n){
 							//std::cout << "Work is done!" << std::endl;
@@ -315,7 +315,7 @@ void rows(auto trials)
 {	
 	// File for storing timing data
 	std::ofstream fout;
-	fout.open("mult_pixel_time_results.txt");
+	fout.open("rows_time_results.txt");
 	std::vector<std::pair<int, double>> thread_avg_pairs;
 	for (auto i = 1; i <= 8; i++)
 	{
@@ -396,7 +396,7 @@ void even(int trials)
 {
 	// File for storing timing data
 	std::ofstream fout;
-	fout.open("mult_pixel_time_results.txt");
+	fout.open("even_time_results.txt");
 	std::vector<std::pair<int, double>> thread_avg_pairs;
 	for (auto i = 1; i <= 8; i++)
 	{
