@@ -49,7 +49,8 @@ void WorkQueue::start(int n)
 		}
 	};
 	for(auto i = 0; i < n; ++i)
-	{
+	{	
+		std::cout << "Starting thread" << std::endl;
 		threadpool.emplace_back(std::thread(doTask));
 	}
 }

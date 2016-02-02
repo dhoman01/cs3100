@@ -490,13 +490,12 @@ int main(){
 	writeToPpm("chunks",mandelbrot::imageWidth, mandelbrot::imageHeight);
 	std::cout << "Finished writing to file.\n";
 
-    work_done = false;
-    //std::cout << "Per pixel" << std::endl;
-    //perPixel(trials);
+    std::cout << "Per pixel" << std::endl;
+    perPixel(trials);
     //// Write generated image to PPM
-    //std::cout << "Finished generating image, writing to file...\n";
-    //writeToPpm("per_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
-    //std::cout << "Finished writing to file.\n";
+    std::cout << "Finished generating image, writing to file...\n";
+    writeToPpm("per_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
+    std::cout << "Finished writing to file.\n";
 
     //work_done = false;
 	std::cout << "multPixel" << std::endl;
@@ -506,7 +505,6 @@ int main(){
     writeToPpm("mult_pixel",mandelbrot::imageWidth, mandelbrot::imageHeight);
 	std::cout << "Finished writing to file.\n";
 
-    work_done = false;
 	std::cout << "rows" << std::endl;
     rows(trials);
 
@@ -515,7 +513,6 @@ int main(){
     writeToPpm("rows",mandelbrot::imageWidth, mandelbrot::imageHeight);
 	std::cout << "Finished writing to file.\n";
 
-    work_done = true;
 	std::cout << "even" << std::endl;
     even(trials);
     // Write generated image to PPM
