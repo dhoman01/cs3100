@@ -1,0 +1,120 @@
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 1
+Threaded average running time: 22.7741
+Threaded standard deviation: 0.126021
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 2
+Threaded average running time: 23.2522
+Threaded standard deviation: 0.308311
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 3
+Threaded average running time: 23.2028
+Threaded standard deviation: 0.1467
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 4
+Threaded average running time: 23.3662
+Threaded standard deviation: 0.068247
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 5
+Threaded average running time: 23.0863
+Threaded standard deviation: 0.114625
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 6
+Threaded average running time: 23.2663
+Threaded standard deviation: 0.0533454
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 7
+Threaded average running time: 23.2624
+Threaded standard deviation: 0.0897673
+=======================================
+
+=======================================
+Image stats: imageWidth, imageHeight, maxN, minR, maxR, minI, maxI
+512, 512, 100, -2, 2, -2, 2
+# of trials: 2
+# of threads: 8
+Threaded average running time: 23.0073
+Threaded standard deviation: 0.157315
+=======================================
+
+=======================================
+Comparing 1 thread to 1 threads
+Speed up: 1
+Efficiency: 1
+=======================================
+
+=======================================
+Comparing 1 thread to 2 threads
+Speed up: 0.97944
+Efficiency: 0.48972
+=======================================
+
+=======================================
+Comparing 1 thread to 3 threads
+Speed up: 0.981527
+Efficiency: 0.327176
+=======================================
+
+=======================================
+Comparing 1 thread to 4 threads
+Speed up: 0.97466
+Efficiency: 0.243665
+=======================================
+
+=======================================
+Comparing 1 thread to 5 threads
+Speed up: 0.98648
+Efficiency: 0.197296
+=======================================
+
+=======================================
+Comparing 1 thread to 6 threads
+Speed up: 0.978848
+Efficiency: 0.163141
+=======================================
+
+=======================================
+Comparing 1 thread to 7 threads
+Speed up: 0.979011
+Efficiency: 0.139859
+=======================================
+
+=======================================
+Comparing 1 thread to 8 threads
+Speed up: 0.989865
+Efficiency: 0.123733
+=======================================
+

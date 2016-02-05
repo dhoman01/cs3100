@@ -1,0 +1,1 @@
+/usr/bin/c++    -std=c++14 -pthread -O0 -g3    CMakeFiles/sort-search.dir/main.cpp.o  -o sort-search -rdynamic 
