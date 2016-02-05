@@ -16,6 +16,7 @@ private:
 	ThreadSafeQueue<std::function<void(void)>> tasklist;
 	std::atomic<bool> cont;
 	std::vector<std::thread> threadpool;
+	std::mutex mutex_cout;
 public:
 	WorkQueue():cont(true), threadpool(), tasklist(){};
 	~WorkQueue(){ stop(); };
@@ -26,7 +27,7 @@ public:
 
 void WorkQueue::start(int n)
 {
-	auto doTask =[&](){
+	auto doTask = [=](){
 		try
 		{
 			while(cont.load())
@@ -34,22 +35,23 @@ void WorkQueue::start(int n)
 				try
 				{
 					auto t = tasklist.dequeue();
-					if(t) t();
-					if(!t) std::cout << "Empty function" << std::endl;
+					t();
 				}
 				catch(const std::exception &exc)
 				{
-					// do nothing std::cerr << "Inner exception: " << exc.what() << std::endl;
+					std::lock_guard<std::mutex> lck(mutex_cout);
+					std::cerr << "Inner exception: " << exc.what() << std::endl;
 				}
 			}
 		}
 		catch(const std::exception &exc)
 		{
-			// do nothing std::cerr << "Outer exception: " << exc.what() <<std::endl;
+			std::lock_guard<std::mutex> lck(mutex_cout);
+			std::cerr << "Outer exception: " << exc.what() <<std::endl;
 		}
 	};
 	for(auto i = 0; i < n; ++i)
-	{	
+	{
 		threadpool.emplace_back(std::thread(doTask));
 	}
 }
@@ -59,7 +61,6 @@ void WorkQueue::stop()
 	cont = false;
 	tasklist.abort();
 	std::for_each(threadpool.begin(),threadpool.end(),[](auto& t){
-		std::cout << "Joining..." << std::endl;
 		t.join();
 	});
 

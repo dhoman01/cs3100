@@ -39,10 +39,11 @@ public:
 			};
 		}
 
+		std::lock_guard<std::mutex> l(mutex_data);
 		if(!data.empty())
 		{
-			std::lock_guard<std::mutex> l(mutex_data);
 			auto res = data.front();
+			if(!res) std::cout << "res is empty and data.empty() is " << data.empty() << std::endl;
 			data.pop();
 			return res;
 		}

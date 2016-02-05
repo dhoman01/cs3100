@@ -17,8 +17,8 @@ namespace timer {
 		return end - start;        // Return the time_span
 	}
 
-	template<typename F>
-	auto timeFunction(F f, auto& param) {
+	template<typename F, typename P>
+	auto timeFunction(F f, P& param) {
 		// Start the timer
 		auto start = std::chrono::steady_clock::now();
 

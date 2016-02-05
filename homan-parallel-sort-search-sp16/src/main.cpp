@@ -5,6 +5,7 @@
 #include <time.h>
 #include <mutex>
 #include <atomic>
+#include <cmath>
 #include <condition_variable>
 #include "WorkQueue.hpp"
 
@@ -21,47 +22,52 @@ auto getRandomData(int size)
 	{
 		data.push_back(std::rand() % size + 1);
 	}
-	
+
 	return data;
 }
 
 int main()
-{	
-	for(int i = 1; i <= 8; i++)
+{
+	std::vector<int> data;
+	{
+		std::lock_guard<std::mutex> lck(mutex_data);
+		data = getRandomData(10000);
+	};
+	auto min = 0;
+	auto max = 0;
+	auto target = data[std::rand() % data.size()];
+	auto finished = 0;
+	for(auto i = 1; i <= 8; i++)
 	{
 		WorkQueue wq;
 		wq.start(i);
-		std::cout << i << " threads" << std::endl;
-		std::vector<int> data;
-		{
-			std::lock_guard<std::mutex> lck(mutex_data);
-			data = getRandomData(10 * (std::pow(10,i)));
-		};
-		auto min = 0;
-		auto max = data.size() / i;
-		auto target = data[std::rand() % data.size()];
+		finished = i;
+		std::cout << finished << " threads" << std::endl;
+		min = 0;
+		max = data.size() / finished;
+		count = 0;
 		while(max <= data.size() )
 		{
-			wq.post([=,&data](){
+			wq.post([&,min,max,target,finished](){
 				auto res = std::find(data.begin() + min, data.begin() + max, target);
-				std::cout << "target: " << target << "      result: " << *res << std::endl;
+				//std::cout << "target: " << target << "      result: " << *res << std::endl;
 				count++;
-				if(count == i) cv.notify_all();
+				if(count.load() == finished) cv.notify_all();
 			});
 			min = max;
-			max += data.size() / i;
-		}		
-		
+			max += data.size() / finished;
+		}
+
 		std::cout << "Ending..." << std::endl;
-		
-		while(count.load() < i)
+
+		while(count.load() < finished)
 		{
 			std::unique_lock<std::mutex> lck(mutex_wait);
 			cv.wait(lck, [=]{
-				return count.load() == i;
+				return count.load() == finished;
 			});
 		}
 	}
-	
+
 	return EXIT_SUCCESS;
 }
