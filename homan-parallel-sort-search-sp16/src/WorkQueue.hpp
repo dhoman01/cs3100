@@ -39,15 +39,15 @@ void WorkQueue::start(int n)
 				}
 				catch(const std::exception &exc)
 				{
-					std::lock_guard<std::mutex> lck(mutex_cout);
-					std::cerr << "Inner exception: " << exc.what() << std::endl;
+					//std::lock_guard<std::mutex> lck(mutex_cout);
+					//std::cerr << "Inner exception: " << exc.what() << std::endl;
 				}
 			}
 		}
 		catch(const std::exception &exc)
 		{
-			std::lock_guard<std::mutex> lck(mutex_cout);
-			std::cerr << "Outer exception: " << exc.what() <<std::endl;
+			//std::lock_guard<std::mutex> lck(mutex_cout);
+			//std::cerr << "Outer exception: " << exc.what() <<std::endl;
 		}
 	};
 	for(auto i = 0; i < n; ++i)

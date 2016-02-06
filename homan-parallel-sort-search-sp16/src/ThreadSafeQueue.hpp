@@ -35,7 +35,7 @@ public:
 			}
 			{
 				std::unique_lock<std::mutex> lck (mutex_wait);
-				empty.wait(lck,[&]{ return !data.empty() || !cont.load(); });
+				empty.wait(lck,[=]{ return !data.empty() || !cont.load(); });
 			};
 		}
 

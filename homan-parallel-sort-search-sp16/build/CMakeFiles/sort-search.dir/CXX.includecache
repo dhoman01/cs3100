@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/dustinehoman/Documents/cs3100/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
 mutex
 -
 atomic
@@ -20,7 +20,7 @@ exception
 iostream
 -
 
-/Users/dustinehoman/Documents/cs3100/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
 algorithm
 -
 iostream
@@ -38,9 +38,9 @@ atomic
 mutex
 -
 ThreadSafeQueue.hpp
-/Users/dustinehoman/Documents/cs3100/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
 
-/Users/dustinehoman/Documents/cs3100/cs3100/homan-parallel-sort-search-sp16/src/main.cpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/main.cpp
 iostream
 -
 fstream
@@ -59,6 +59,24 @@ cmath
 -
 condition_variable
 -
+algorithm
+-
 WorkQueue.hpp
-/Users/dustinehoman/Documents/cs3100/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
+timer.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/timer.hpp
+stats.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/stats.hpp
+
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/stats.hpp
+cmath
+-
+algorithm
+-
+
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/timer.hpp
+algorithm
+-
+chrono
+-
 
