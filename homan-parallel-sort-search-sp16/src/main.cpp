@@ -225,7 +225,7 @@ auto sort_experiment(auto trials)
 				std::vector<int> data;
 				{
 					std::lock_guard<std::mutex> lck(mutex_data);
-					data = getRandomData(100);
+					data = getRandomData(n);
 				};
 				{
 					std::lock_guard<std::mutex> lck(mutex_cout);
