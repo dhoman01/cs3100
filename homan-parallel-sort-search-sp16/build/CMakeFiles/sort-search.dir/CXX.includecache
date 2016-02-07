@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
 mutex
 -
 atomic
@@ -20,7 +20,7 @@ exception
 iostream
 -
 
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
 algorithm
 -
 iostream
@@ -38,9 +38,9 @@ atomic
 mutex
 -
 ThreadSafeQueue.hpp
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/ThreadSafeQueue.hpp
 
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/main.cpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/main.cpp
 iostream
 -
 fstream
@@ -64,19 +64,19 @@ algorithm
 sstream
 -
 WorkQueue.hpp
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/WorkQueue.hpp
 timer.hpp
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/timer.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/timer.hpp
 stats.hpp
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/stats.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/stats.hpp
 
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/stats.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/stats.hpp
 cmath
 -
 algorithm
 -
 
-/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/timer.hpp
+/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/timer.hpp
 algorithm
 -
 chrono
