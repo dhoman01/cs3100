@@ -102,6 +102,17 @@ auto search_experiment(auto trials)
 			fout << i << "               " << times.first << "          " << times.second << std::endl;
 			i++;
 		});
+		fout << "\n\n";
+		double org_avg = thread_pairs[0].second;
+		std::for_each(thread_pairs.begin(), thread_pairs.end(), [&fout,org_avg](auto& pair){
+			fout << "=======================================\n";
+			fout << "Comparing 1 thread to " << pair.first << " threads" << std::endl;
+			double S =  stats::getSpeedUp(org_avg, pair.second);
+			fout << "Speed up: " << S << std::endl;
+			double E = stats::getEfficiency(S, pair.first);
+			fout << "Efficiency: " << E << std::endl;
+			fout << "=======================================\n\n";
+		});
 
 		fout.close();
 	}
@@ -109,98 +120,157 @@ auto search_experiment(auto trials)
 
 int partition(int start, int end, std::vector<int>& data)
 {
-
+	int mid = (end - start) / 2;
+	{
+		std::lock_guard<std::mutex> lck(mutex_data);
+		if(data[start] < data[mid] && data[mid] < data[end]) std::swap(data[mid], data[start]);
+		if(data[end] < data[start] && data[end] < data[mid]) std::swap(data[end], data[start]);
+	}
 	int left = start;
 	int right = end;
 	while(left < right)
 	{
+		std::lock_guard<std::mutex> lck(mutex_data);
 		while(data[left] <= data[start] && left != end) left++;
 		while(data[right] > data[start] && right != start) right--;
 		if(left < right) std::swap(data[left], data[right]);
 	}
-	std::swap(data[start], data[right]);
+	{
+		std::lock_guard<std::mutex> lck(mutex_data);
+		std::swap(data[start], data[right]);
+	}
 
 	return right;
 }
 
-void quicksort(int start, int end, std::vector<int>& data)
+void quicksort(int start, int end, std::vector<int>& data, WorkQueue& wq)
 {
+	// {
+	// 	std::lock_guard<std::mutex> lck(mutex_cout);
+	// 	std::cout << "Data before:" << std::endl;
+	// 	{
+	// 		std::lock_guard<std::mutex> lck(mutex_data);
+	// 		std::for_each(data.begin(), data.end(), [](auto& item){
+	// 			std::cout << item << " ";
+	// 		});
+	// 	};
+	// 	std::cout << std::endl;
+	// };
 	int r;
-  if(start<end)
+	if(end - start <= 50 && start < end)
+	{
+		std::lock_guard<std::mutex> lck(mutex_data);
+		std::sort(data.begin() + start, data.begin() + end);
+		count--;
+		if(count.load() <= 0) cv.notify_all();
+	}
+  else if(start<end && end - start > 50)
   {
       r = partition(start,end,data);
-      quicksort(start,r-1,data);
-      quicksort(r+1,end,data);
+			//std::cout << "partition " << r << std::endl;
+			if((r-1) - start < end - (r + 1))
+			{
+				count++;
+				wq.post([=,&data,&wq](){quicksort(start,r-1,data,wq);});
+	      quicksort(r+1,end,data,wq);
+			}
+			else
+			{
+				count++;
+				wq.post([=,&data,&wq]{quicksort(r+1,end,data,wq);});
+				quicksort(start,r-1,data,wq);
+			}
   }
+	// {
+	// 	std::lock_guard<std::mutex> lck(mutex_cout);
+	// 	std::cout << "Data after:" << std::endl;
+	// 	{
+	// 		std::lock_guard<std::mutex> lck(mutex_data);
+	// 		std::for_each(data.begin(), data.end(), [](auto& item){
+	// 			std::cout << item << " ";
+	// 		});
+	// 	};
+	// 	std::cout << std::endl;
+	// };
 }
 
-auto partition_check(){
-	std::vector<int> data = getRandomData(100);
-	std::cout << "Data before partition:" << std::endl;
-	std::for_each(data.begin(), data.end(), [](auto& item){
-		std::cout << item << " ";
-	});
-	std::cout << std::endl;
-	quicksort(0, data.size() - 1, data);
-
-	std::cout << "Data after partition:" << std::endl;
-	std::for_each(data.begin(), data.end(), [](auto& item){
-		std::cout << item << " ";
-	});
-	std::cout << std::endl;
-}
+// auto partition_check(){
+// 	std::vector<int> data = getRandomData(100);
+// 	std::cout << "Data before partition:" << std::endl;
+// 	std::for_each(data.begin(), data.end(), [](auto& item){
+// 		std::cout << item << " ";
+// 	});
+// 	std::cout << std::endl;
+// 	quicksort(0, data.size() - 1, data);
+//
+// 	std::cout << "Data after partition:" << std::endl;
+// 	std::for_each(data.begin(), data.end(), [](auto& item){
+// 		std::cout << item << " ";
+// 	});
+// 	std::cout << std::endl;
+// }
 
 auto sort_experiment(auto trials)
 {
 	for(auto n = 100; n <= 1000000; n *= 10)
 	{
-		std::vector<int> data;
-		{
-			std::lock_guard<std::mutex> lck(mutex_data);
-			data = getRandomData(n);
-		};
-		auto min = 0;
-		auto max = 0;
-		auto target = data[std::rand() % data.size()];
-		auto finished = 0;
 		std::vector<std::pair<double,double>> thread_pairs;
 		for(auto i = 1; i <= 8; i++)
 		{
+			std::cout << "threads " << i << std::endl;
 			std::vector<double> running_times (trials);
 			for(auto t = 0; t < trials; t++)
 			{
+				std::cout << "Trials " << t << std::endl;
+				std::vector<int> data;
+				{
+					std::lock_guard<std::mutex> lck(mutex_data);
+					data = getRandomData(100);
+				};
+				{
+					std::lock_guard<std::mutex> lck(mutex_cout);
+					std::cout << "Data before:" << std::endl;
+					{
+						std::lock_guard<std::mutex> lck(mutex_data);
+						std::for_each(data.begin(), data.end(), [](auto& item){
+							std::cout << item << " ";
+						});
+					};
+					std::cout << std::endl;
+				};
+				count = 1;
 				auto sort = [&](){
 
 					WorkQueue wq;
 
 					wq.start(i);
+					auto start = 0;
+					auto end = data.size();
 
-					finished = i;
-					min = 0;
+					auto qsort  = [=,&data,&wq](){
+							quicksort(start,end,data,wq);
+							count--;
+					};
+					wq.post(qsort);
 
-					max = data.size() / finished;
-
-					count = 0;
-					while(max <= data.size() )
-					{
-						wq.post([=, &wq](){
-							{
-								std::lock_guard<std::mutex> lck(mutex_data);
-							};
-							count++;
-							if(count.load() == finished) cv.notify_all();
-						});
-						min = max;
-						max += data.size() / finished;
-					}
-
-					while(count.load() < finished)
+					while(count.load() > 0)
 					{
 						std::unique_lock<std::mutex> lck(mutex_wait);
 						cv.wait(lck, [=]{
-							return count.load() == finished;
+							return count.load() <= 0;
 						});
 					}
+					{
+						std::lock_guard<std::mutex> lck(mutex_cout);
+						std::cout << "Data after:" << std::endl;
+						{
+							std::lock_guard<std::mutex> lck(mutex_data);
+							std::for_each(data.begin(), data.end(), [](auto& item){
+								std::cout << item << " ";
+							});
+						};
+						std::cout << std::endl;
+					};
 				};
 
 				std::chrono::duration<double> time_span = timer::timeFunction<decltype(sort)>(sort);
@@ -232,10 +302,12 @@ int main()
 	auto trials = 100;
 	std::cout << "Enter the number of trials: " << std::endl;
 	std::cin >> trials;
-	std::cout << "Doing search experiment" << std::endl;
-	search_experiment(trials);
-	std::cout << "search experiment finished..." << std::endl;
-	// partition_check();
+	// std::cout << "Doing search experiment" << std::endl;
+	// search_experiment(trials);
+	// std::cout << "search experiment finished..." << std::endl;
+	//partition_check();
+
+	sort_experiment(trials);
 
 	return EXIT_SUCCESS;
 }
