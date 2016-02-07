@@ -35,56 +35,54 @@ auto search_experiment(auto trials)
 {
 	for(auto n = 100; n <= 1000000; n *= 10)
 	{
+		std::cout << "Gathering problem size " << n << std::endl;
 		std::vector<int> data;
 		{
 			std::lock_guard<std::mutex> lck(mutex_data);
-			data = getRandomData(1000000);
+			data = getRandomData(n);
 		};
 		auto min = 0;
 		auto max = 0;
 		auto target = data[std::rand() % data.size()];
-		auto finished = 0;
+
 		std::vector<std::pair<double,double>> thread_pairs;
 		for(auto i = 1; i <= 8; i++)
 		{
+			std::cout << "threads " << i << std::endl;
 			std::vector<double> running_times (trials);
 			for(auto t = 0; t < trials; t++)
 			{
 				auto search = [&](){
+					WorkQueue wq;
 
+					wq.start(i);
+
+					min = 0;
+
+					max = data.size() / i;
+
+					count = 0;
 					while(max <= data.size() )
 					{
-						WorkQueue wq;
-
-						wq.start(i);
-
-						finished = i;
-						min = 0;
-
-						max = data.size() / finished;
-
-						count = 0;
 						wq.post([=](){
-							{
-								std::lock_guard<std::mutex> lck(mutex_data);
-								auto res = std::find(data.begin() + min, data.begin() + max, target);
-							};
+							std::lock_guard<std::mutex> lck(mutex_data);
+							auto res = std::find(data.begin() + min, data.begin() + max + 1, target);
 							count++;
-							if(count.load() == finished) cv.notify_all();
+							if(count.load() == i) cv.notify_all();
 						});
-						min = max;
-						max += data.size() / finished;
+						min = max + 1;
+						max += data.size() / i;
 					}
 
-					while(count.load() < finished)
+					while(count.load() < i)
 					{
 						std::unique_lock<std::mutex> lck(mutex_wait);
 						cv.wait(lck, [=]{
-							return count.load() == finished;
+							bool done = count.load() == i;
+							return done;
 						});
 					}
 				};
-
 				std::chrono::duration<double> time_span = timer::timeFunction<decltype(search)>(search);
 				running_times.push_back(time_span.count());
 			}
@@ -173,18 +171,18 @@ auto sort_experiment(auto trials)
 			{
 				auto sort = [&](){
 
+					WorkQueue wq;
+
+					wq.start(i);
+
+					finished = i;
+					min = 0;
+
+					max = data.size() / finished;
+
+					count = 0;
 					while(max <= data.size() )
 					{
-						WorkQueue wq;
-
-						wq.start(i);
-
-						finished = i;
-						min = 0;
-
-						max = data.size() / finished;
-
-						count = 0;
 						wq.post([=, &wq](){
 							{
 								std::lock_guard<std::mutex> lck(mutex_data);
@@ -234,10 +232,10 @@ int main()
 	auto trials = 100;
 	std::cout << "Enter the number of trials: " << std::endl;
 	std::cin >> trials;
-
-	//search_experiment(trials);
-
-	partition_check();
+	std::cout << "Doing search experiment" << std::endl;
+	search_experiment(trials);
+	std::cout << "search experiment finished..." << std::endl;
+	// partition_check();
 
 	return EXIT_SUCCESS;
 }

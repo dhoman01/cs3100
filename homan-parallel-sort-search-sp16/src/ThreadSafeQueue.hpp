@@ -25,6 +25,10 @@ public:
 		data.push(t);
 		empty.notify_one();
 	};
+	int size(){
+		std::lock_guard<std::mutex> lck(mutex_data);
+		return data.size();
+	}
 	T dequeue()
 	{
 		while(data.empty())
@@ -43,7 +47,6 @@ public:
 		if(!data.empty())
 		{
 			auto res = data.front();
-			if(!res) std::cout << "res is empty and data.empty() is " << data.empty() << std::endl;
 			data.pop();
 			return res;
 		}

@@ -13,10 +13,11 @@
 
 class WorkQueue {
 private:
+	std::vector<std::thread> threadpool;
 	ThreadSafeQueue<std::function<void(void)>> tasklist;
 	std::atomic<bool> cont;
-	std::vector<std::thread> threadpool;
 	std::mutex mutex_cout;
+	std::mutex mutex_task;
 public:
 	WorkQueue():cont(true), threadpool(), tasklist(){};
 	~WorkQueue(){ stop(); };
@@ -28,29 +29,25 @@ public:
 void WorkQueue::start(int n)
 {
 	auto doTask = [=](){
-		try
+		while(cont.load())
 		{
-			while(cont.load())
+			try
 			{
-				try
+				std::function<void(void)> t;
 				{
-					auto t = tasklist.dequeue();
-					t();
-				}
-				catch(const std::exception &exc)
-				{
-					//std::lock_guard<std::mutex> lck(mutex_cout);
-					//std::cerr << "Inner exception: " << exc.what() << std::endl;
-				}
+					std::lock_guard<std::mutex> lck(mutex_task);
+					t = tasklist.dequeue();
+				};
+				t();
+			}
+			catch(const std::exception &exc)
+			{
+				// std::lock_guard<std::mutex> lck(mutex_cout);
+				// std::cerr << "Exception: " << exc.what() << std::endl;
 			}
 		}
-		catch(const std::exception &exc)
-		{
-			//std::lock_guard<std::mutex> lck(mutex_cout);
-			//std::cerr << "Outer exception: " << exc.what() <<std::endl;
-		}
 	};
-	for(auto i = 0; i < n; ++i)
+	for(auto i = 0; i < n; i++)
 	{
 		threadpool.emplace_back(std::thread(doTask));
 	}

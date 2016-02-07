@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/src/main.cpp" "/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/build/CMakeFiles/sort-search.dir/main.cpp.o"
+  "/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/src/main.cpp" "/home/dustin/Documents/cs3100/homan-parallel-sort-search-sp16/build/CMakeFiles/sort-search.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
