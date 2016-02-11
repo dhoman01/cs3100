@@ -46,8 +46,8 @@ int main()
       {
         args[i] = temp_args[i];
       }
-      
-      execv(args[0], args);
+
+      execvp(args[0], args);
       std::cout << "The command, " << command << ", failed to execute..." << std::endl;
       return EXIT_FAILURE;
     }
