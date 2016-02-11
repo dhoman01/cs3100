@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/dustinhoman/Documents/cs3100/homan-shell-1-sp16/src/main.cpp
+iostream
+-
+unistd.h
+-
+stdlib.h
+-
+sys/wait.h
+-
+sys/types.h
+-
+string
+-
+chrono
+-
+vector
+-
+algorithm
+-
+
