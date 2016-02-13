@@ -4,6 +4,8 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <string>
+#include <cstring>
+#include <exception>
 #include <chrono>
 #include <vector>
 #include <algorithm>
@@ -50,7 +52,7 @@ auto doCommandHistory(std::string& command, std::vector<std::string> command_his
       return 100;
     }
   }
-  catch(const std::invalid_argument& ia)
+  catch(...)
   {
     std::cout << command.substr(2) << " is an invalid argument. The argument to '^' needs to be an integer." << std::endl;
     return 100;
