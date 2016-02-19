@@ -9,6 +9,7 @@
 #include <chrono>
 #include <vector>
 #include <algorithm>
+#include <stdio.h>
 
 // Parse agruments from string
 auto getArgs(std::string command)
@@ -31,7 +32,7 @@ auto doChildWork(std::string command)
 
   execvp(args[0], args.data());
   // If execvp returns that means it failed to execute
-  std::cout << "Couldn't find the command: " << command << std::endl;
+  perror("Couldn't find command");
   return EXIT_FAILURE;
 }
 
