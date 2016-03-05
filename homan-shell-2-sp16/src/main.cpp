@@ -1,6 +1,6 @@
 #include <iostream>
 #include <unistd.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <string>
@@ -9,7 +9,7 @@
 #include <chrono>
 #include <vector>
 #include <algorithm>
-#include <stdio.h>
+#include <cstdio>
 #include <sstream>
 #include <queue>
 
@@ -36,6 +36,63 @@ auto doChildWork(std::string command)
   // If execvp returns that means it failed to execute
   perror("Couldn't find command");
   return EXIT_FAILURE;
+}
+
+auto split(const std::string &s, char delim)
+{
+    std::queue<std::string> elems;
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push(item);
+    }
+    return elems;
+}
+
+auto inFromFile(std::string command, int* pipe)
+{
+  auto fileandcmd = split(command, '<');
+
+  auto cmd = fileandcmd.front();
+  fileandcmd.pop();
+
+  auto file = fopen(fileandcmd.front().c_str(), "r");
+
+  dup2(fileno(file),STDIN_FILENO);
+  close(pipe[0]);
+
+  doChildWork(cmd);
+}
+
+// Do IO redirect
+auto ioRedirect(std::string command)
+{
+  auto commands = split(command, '|');
+  std::string cmd;
+  while(!commands.empty())
+  {
+    int pip[2];
+    pipe(pip);
+    auto pid = fork();
+    if(pid < 0) return EXIT_FAILURE;
+    else if(pid == 0)
+    {
+      if(cmd.find("<") != std::string::npos)
+      {
+        inFromFile(commands.front(),pip);
+
+        exit(EXIT_FAILURE);
+      }
+    }
+    else
+    {
+      waitpid(pid, nullptr, 0);
+      close(pip[0]);
+      close(pip[1]);
+      commands.pop();
+    }
+  }
+
 }
 
 auto doCommandHistory(std::string& command, std::vector<std::string> command_history)
@@ -95,6 +152,14 @@ auto parseCommand(std::string& command, std::vector<std::string>& command_histor
   else if(command == "history") return doPrintHistory(command_history);
   else if(command == "") return 100;
   else if(command == "ptime") return doPrintRunningTime(child_runningtime);
+  else if(command.find("|")!=std::string::npos || command.find("<") != std::string::npos || command.find(">") != std::string::npos)
+  {
+    if(command_history.size() == 0 || command_history.front() != command)
+      command_history.insert(command_history.begin(),command);
+    std::cout << "Redirecting IO" << std::endl;
+    ioRedirect(command);
+    return 100;
+  }
   return 200;
 }
 
