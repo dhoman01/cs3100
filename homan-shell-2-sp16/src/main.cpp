@@ -12,6 +12,8 @@
 #include <cstdio>
 #include <sstream>
 #include <queue>
+#include <cctype>
+#include <array>
 
 // Parse agruments from string
 auto getArgs(std::string command)
@@ -27,6 +29,21 @@ auto getArgs(std::string command)
   return args;
 }
 
+
+auto doInPipe(std::array<int,2> oldFds)
+{
+    dup2(oldFds[0], STDIN_FILENO);
+    close(oldFds[0]);
+    close(oldFds[1]);
+}
+
+auto doOutPipe(std::array<int,2> newFds)
+{
+    close(newFds[0]);
+    dup2(newFds[1], STDOUT_FILENO);
+    close(newFds[1]);
+}
+
 // Execute process with current PATH
 auto doChildWork(std::string command)
 {
@@ -38,29 +55,55 @@ auto doChildWork(std::string command)
   return EXIT_FAILURE;
 }
 
+// Trim whitespace from front and back of string
+auto trim(const std::string &s)
+{
+   auto front=std::find_if_not(s.begin(),s.end(),[](int c){return std::isspace(c);});
+   auto back=std::find_if_not(s.rbegin(),s.rend(),[](int c){return std::isspace(c);}).base();
+   return (back<=front ? std::string() : std::string(front,back));
+}
+
+// Split std::string on deliminator
 auto split(const std::string &s, char delim)
 {
     std::queue<std::string> elems;
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
-        elems.push(item);
+        elems.push(trim(item));
     }
     return elems;
 }
 
-auto inFromFile(std::string command, int* pipe)
+// Set STDIN to file
+auto inFromFile(std::string command, bool needsOutPipe, std::array<int,2> newFds)
 {
   auto fileandcmd = split(command, '<');
 
   auto cmd = fileandcmd.front();
   fileandcmd.pop();
+  auto filename = trim(fileandcmd.front());
 
-  auto file = fopen(fileandcmd.front().c_str(), "r");
+  auto file = fopen(filename.c_str(), "r");
 
   dup2(fileno(file),STDIN_FILENO);
-  close(pipe[0]);
+  if(needsOutPipe) doOutPipe(newFds);
+  doChildWork(cmd);
+}
 
+// Set STDOUT to file
+auto outToFile(std::string command, bool needsInPipe, std::array<int,2> oldFds)
+{
+  auto fileandcmd = split(command, '>');
+
+  auto cmd = fileandcmd.front();
+  fileandcmd.pop();
+  auto filename = trim(fileandcmd.front());
+
+  auto file = fopen(filename.c_str(), "w");
+
+  dup2(fileno(file),STDOUT_FILENO);
+  if(needsInPipe) doInPipe(oldFds);
   doChildWork(cmd);
 }
 
@@ -68,31 +111,61 @@ auto inFromFile(std::string command, int* pipe)
 auto ioRedirect(std::string command)
 {
   auto commands = split(command, '|');
-  std::string cmd;
+  bool multCmds = commands.size() > 1;
+  int in = 0;
+
+  std::array<int,2> oldFds;
+  std::array<int,2> newFds;
+
   while(!commands.empty())
   {
-    int pip[2];
-    pipe(pip);
+    std::string cmd = commands.front();
+    commands.pop();
+
+    auto p = pipe(newFds.data());
+
     auto pid = fork();
-    if(pid < 0) return EXIT_FAILURE;
+    if(pid < 0) exit(EXIT_FAILURE);
     else if(pid == 0)
     {
       if(cmd.find("<") != std::string::npos)
       {
-        inFromFile(commands.front(),pip);
-
-        exit(EXIT_FAILURE);
+        inFromFile(cmd, commands.size() != 0, newFds);
       }
+      else if(cmd.find(">") != std::string::npos)
+      {
+        outToFile(cmd, in > 0, oldFds);
+      }
+      else
+      {
+        if(in > 0 ) doInPipe(oldFds);
+        if(commands.size() != 0) doOutPipe(newFds);
+
+        doChildWork(cmd);
+      }
+
+      exit(EXIT_FAILURE);
     }
     else
     {
+      if(in > 0)
+      {
+        close(oldFds[0]);
+        close(oldFds[1]);
+      }
+      if(commands.size() > 0)
+      {
+        oldFds = newFds;
+      }
+      in++;
       waitpid(pid, nullptr, 0);
-      close(pip[0]);
-      close(pip[1]);
-      commands.pop();
     }
   }
-
+  if(multCmds)
+  {
+    close(oldFds[0]);
+    close(oldFds[1]);
+  }
 }
 
 auto doCommandHistory(std::string& command, std::vector<std::string> command_history)
@@ -104,6 +177,11 @@ auto doCommandHistory(std::string& command, std::vector<std::string> command_his
     {
       std::cout << command_history[hist_position - 1] << std::endl;
       command = command_history[hist_position - 1];
+      if(command.find("|")!=std::string::npos || command.find("<") != std::string::npos || command.find(">") != std::string::npos)
+      {
+        ioRedirect(command);
+        return 100;
+      }
       return 200;
     }
     else
@@ -145,7 +223,7 @@ auto doPrintRunningTime(std::chrono::duration<double> child_runningtime)
 // return 100 is a shell command not to store
 // return 200 is an executible or shell command to store
 // Also EXIT_SUCCESS and EXIT_FAILURE are possible returns
-auto parseCommand(std::string& command, std::vector<std::string>& command_history, std::chrono::duration<double> child_runningtime)
+auto parseCommand(std::string& command, std::vector<std::string>& command_history, std::chrono::duration<double>& child_runningtime)
 {
   if(command == "exit") return EXIT_SUCCESS;
   else if(command[0] == '^') return doCommandHistory(command, command_history);
@@ -156,8 +234,11 @@ auto parseCommand(std::string& command, std::vector<std::string>& command_histor
   {
     if(command_history.size() == 0 || command_history.front() != command)
       command_history.insert(command_history.begin(),command);
-    std::cout << "Redirecting IO" << std::endl;
+    auto start = std::chrono::steady_clock::now();
     ioRedirect(command);
+    auto end = std::chrono::steady_clock::now();
+
+    child_runningtime += (end - start);
     return 100;
   }
   return 200;

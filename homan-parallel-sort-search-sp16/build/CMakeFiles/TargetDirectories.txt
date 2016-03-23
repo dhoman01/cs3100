@@ -1,1 +1,0 @@
-/home/pi/Desktop/cs3100/homan-parallel-sort-search-sp16/build/CMakeFiles/sort-search.dir
