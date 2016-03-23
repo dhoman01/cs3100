@@ -11,6 +11,7 @@ private:
   RQ readyQueue;
 
 public:
+  ReadyQueue(){};
   void push(Task task) { readyQueue.push(task); }
   Task pop() {
     auto task = readyQueue.front();

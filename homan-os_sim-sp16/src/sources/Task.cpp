@@ -46,11 +46,12 @@ TaskItem make_iotask() {
 
 std::unique_ptr<Task> make_task(int n) {
   auto result = std::make_unique<Task>();
+  result->push(make_cputask());
   for (int i = 0; i < n; i++) {
     if (MIX < getRand(0.0, 1.0))
-      result->push_back(make_cputask());
+      result->push(make_cputask());
     else
-      result->push_back(make_iotask());
+      result->push(make_iotask());
   }
 
   return result;

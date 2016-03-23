@@ -9,8 +9,10 @@ using IOQ = std::queue<Task>;
 class IOQueue {
 private:
   IOQ ioQueue;
+  int r_id;
 
 public:
+  IOQueue(int id) { r_id = id; }
   void push(Task task) { ioQueue.push(task); }
   Task pop() {
     auto task = ioQueue.front();
@@ -18,6 +20,7 @@ public:
     // TODO: Do required stats gathering
     return task;
   }
+  int getRid() { return r_id; }
 };
 
 #endif

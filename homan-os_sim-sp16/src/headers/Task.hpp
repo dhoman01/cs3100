@@ -2,7 +2,7 @@
 #define TASK_HPP
 
 #include <memory>
-#include <vector>
+#include <queue>
 
 struct TaskItem {
   class enum Type { cpu, io };
@@ -11,7 +11,7 @@ struct TaskItem {
   int resource;
 };
 
-using Task = std::vector<TaskItem> v;
+using Task = std::queue<TaskItem> v;
 std::unique_ptr<Task> make_task();
 
 #endif
