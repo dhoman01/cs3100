@@ -1,23 +1,40 @@
 #ifndef READY_QUEUE_HPP
 #define READY_QUEUE_HPP
 
-#include "Task.cpp"
+#include "Task.hpp"
+#include <algorithm>
 #include <queue>
-
-using RQ = std::queue<Task>;
 
 class ReadyQueue {
 private:
+  using RQ = std::queue<TaskHolder::Task>;
   RQ readyQueue;
 
 public:
   ReadyQueue(){};
-  void push(Task task) { readyQueue.push(task); }
-  Task pop() {
+  void push(TaskHolder::Task task) { readyQueue.push(task); }
+  TaskHolder::Task pop() {
     auto task = readyQueue.front();
     readyQueue.pop();
     // TODO: Do required stats gathering
     return task;
+  }
+  bool empty() { return readyQueue.empty(); }
+  int size() { return readyQueue.size(); }
+  void toString() {
+    RQ temp = readyQueue;
+    while (!temp.empty()) {
+      auto task = temp.front();
+      temp.pop();
+      std::cout << "Task.size() " << task.size() << std::endl;
+      while (!task.empty()) {
+        auto item = task.front();
+        task.pop();
+        std::cout << (item.cpu ? "CPU" : "IO") << " " << item.duration
+                  << "s on " << item.resource << std::endl;
+      }
+      std::cout << "\n" << std::endl;
+    }
   }
 };
 

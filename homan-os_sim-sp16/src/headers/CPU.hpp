@@ -2,15 +2,20 @@
 #define CPU_HPP
 
 #include "Task.hpp"
+#include <iostream>
 
-class CPU {
-private:
+struct CPU {
   int cores;
-
-public:
-  CPU(int n) { cores = n; }
-  Task do_task(Task t);
-  int getCores() { return cores; }
+  const double CONTEXT_SWITCH_COST = .02;
+  TaskHolder::Task do_task(TaskHolder::Task t) {
+    cores--;
+    auto task_item = t.front();
+    t.pop();
+    // TODO: do cpu stuff
+    std::cout << "Doing " << task_item.duration << " work on CPU." << std::endl;
+    cores++;
+    return t;
+  };
 };
 
 #endif
