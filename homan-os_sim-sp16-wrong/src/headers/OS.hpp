@@ -10,6 +10,20 @@
 #include <memory>
 
 struct OS {
+  void startFIFO(int cores, int number_io, int number_task) {
+    EventQueue eq;
+    ReadyQueue rq;
+    TaskHolder::number_io = number_io;
+    std::vector<IOQueue> io_devices;
+    for (int i = 1; i <= number_io; i++) {
+      io_devices.push_back(IOQueue(i));
+    }
+
+    while (!eq.empty()) {
+      auto event = eq.front();
+      eq.pop();
+    }
+  }
   void init(int cores, int number_io, int number_task) {
     CPU cpu;
     cpu.cores = cores;
