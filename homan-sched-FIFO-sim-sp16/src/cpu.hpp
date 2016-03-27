@@ -12,6 +12,6 @@ struct CPU {
   double context_switch;
 };
 
-using ready_queue = std::queue<Task>;
+using ready_queue = std::queue<std::shared_ptr<Task>>;
 
 #endif
