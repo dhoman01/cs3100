@@ -109,8 +109,8 @@ void write_data_to_file(int i) {
          << "," << e.TypeNames[e.type] << "," << e.resource_used << std::endl;
   });
   file.close();
-  ss = std::stringstream();
-  ss << "tasks-" << i << ".csv";
+  std::stringstream ss2;
+  ss2 << "tasks-" << i << ".csv";
   file.open(ss.str());
   file << "Trial,Id,Time Created,Response Time,Time Completed,Latency"
        << std::endl;
