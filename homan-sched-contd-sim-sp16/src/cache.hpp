@@ -2,6 +2,7 @@
 #define CACHE_HPP
 
 #include <vector>
+#include <iostream>
 
 namespace MEMORY {
 
@@ -82,8 +83,8 @@ private:
   std::vector<Page> cache;
 
 public:
-  LRU_CACHE() : cache(1024), CACHE(){};
-  LRU_CACHE(int c) : cache(c), CACHE(c){};
+  LRU_CACHE() : cache(1024), mru(0),lru(0),CACHE(){};
+  LRU_CACHE(int c) : cache(c), mru(0),lru(0),CACHE(c){};
   bool get_page(int page) {
     for (int i = 0; i < capacity; i++) {
       // Found page and increment used
@@ -95,6 +96,7 @@ public:
       if (cache[i].page_num == -1) {
         cache[i].page_num = page;
         cache[i].used = ++mru;
+        return false;
       } else {
         if (cache[i].used < cache[lru].used)
           lru = i;
