@@ -1,6 +1,7 @@
 #ifndef TASK_HPP
 #define TASK_HPP
 
+#include <cassert>
 #include <memory>
 #include <queue>
 #include <random>
@@ -31,6 +32,9 @@ const double IO_BOUND_CONTINUE = 0.75;
 // Minimum number of taskitems to add to each task
 const double MIN_TASK_LENGTH = 5;
 
+// The limit on page number to pull from
+const int MAX_PAGE_NUMBER = 2048;
+
 // Used in giving the task in id
 static int task_id_pool = 1;
 int trial_no = 0;
@@ -46,6 +50,7 @@ struct TaskItem {
   double initDuration;
   double completed;
   int resource;
+  int page_number;
   Type type;
 
   // toString function for debugging
@@ -102,6 +107,10 @@ public:
   int size() { return to_do.size(); }
   double front_duration() { return to_do.front().duration; }
   int front_resource() { return to_do.front().resource; }
+  int front_page_number() {
+    assert(to_do.front().type == TaskItem::Type::cpu);
+    return to_do.front().page_number;
+  }
   // toString() function for debugging
   std::string toString() {
     std::stringstream ss;
@@ -140,6 +149,7 @@ int getRand(int l, int u) {
 
 TaskItem make_cputask(double l, double u) {
   TaskItem task_item(getRand(l, u), 0, TaskItem::Type::cpu);
+  task_item.page_number = getRand(0, MAX_PAGE_NUMBER);
   return task_item;
 };
 

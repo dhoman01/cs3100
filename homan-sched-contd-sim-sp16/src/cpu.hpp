@@ -1,6 +1,7 @@
 #ifndef CPU_HPP
 #define CPU_HPP
 
+#include "asjftask.hpp"
 #include "task.hpp"
 #include <queue>
 
